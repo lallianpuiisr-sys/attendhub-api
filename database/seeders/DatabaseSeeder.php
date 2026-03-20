@@ -19,7 +19,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             CourseSeeder::class,
-            SemesterSeeder::class
+            SemesterSeeder::class,
+            PeriodSeeder::class,
+            SubjectSeeder::class,
         ]);
     }
 }

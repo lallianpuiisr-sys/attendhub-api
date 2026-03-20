@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 class SessionController extends Controller
 {
@@ -114,6 +116,67 @@ class SessionController extends Controller
             return $this->successResponse('Logout successful');
         } catch (Throwable $e) {
             return $this->errorResponse('Logout failed', ['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // POST /api/forgot-password
+    public function forgotPassword(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'email' => 'required|email|exists:users,email',
+            ]);
+
+            $status = Password::sendResetLink([
+                'email' => $validated['email'],
+            ]);
+
+            if ($status !== Password::RESET_LINK_SENT) {
+                return $this->errorResponse('Failed to send reset link', ['error' => __($status)], 400);
+            }
+
+            return $this->successResponse('Password reset link sent');
+        } catch (ValidationException $e) {
+            return $this->errorResponse('Validation failed', $e->errors(), 422);
+        } catch (Throwable $e) {
+            return $this->errorResponse('Failed to send reset link', ['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // POST /api/reset-password
+    public function resetPassword(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'token' => 'required|string',
+                'email' => 'required|email|exists:users,email',
+                'password' => 'required|string|min:6|confirmed',
+            ]);
+
+            $status = Password::reset(
+                [
+                    'email' => $validated['email'],
+                    'password' => $validated['password'],
+                    'password_confirmation' => $request->input('password_confirmation'),
+                    'token' => $validated['token'],
+                ],
+                function ($user, $password) {
+                    $user->forceFill([
+                        'password' => Hash::make($password),
+                        'remember_token' => Str::random(60),
+                    ])->save();
+                }
+            );
+
+            if ($status !== Password::PASSWORD_RESET) {
+                return $this->errorResponse('Password reset failed', ['error' => __($status)], 400);
+            }
+
+            return $this->successResponse('Password reset successful');
+        } catch (ValidationException $e) {
+            return $this->errorResponse('Validation failed', $e->errors(), 422);
+        } catch (Throwable $e) {
+            return $this->errorResponse('Password reset failed', ['error' => $e->getMessage()], 500);
         }
     }
 }
