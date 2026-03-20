@@ -15,6 +15,8 @@ class User extends Authenticatable
         'password',
         'role',
         'student_id',
+        'phone',
+        'roll_no',
         'course_id',
         'semester_id',
         'is_active',
