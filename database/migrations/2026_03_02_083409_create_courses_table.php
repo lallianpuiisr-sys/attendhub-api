@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id(); // auto increment primary key
             $table->string('title', 255);
             $table->text('description')->nullable();
+            $table->string('static_qr_token')->nullable()->unique();
             $table->boolean('is_active')->default(true);
             $table->timestamps(); // created_at & updated_at
         });

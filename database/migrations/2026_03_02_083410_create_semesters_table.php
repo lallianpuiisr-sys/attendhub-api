@@ -22,6 +22,7 @@ return new class extends Migration {
             $table->text('description')->nullable();
 
             $table->integer('semester_number'); // 1, 2, 3, 4 etc
+            $table->string('static_qr_token')->nullable()->unique();
 
             $table->boolean('is_active')->default(true);
 

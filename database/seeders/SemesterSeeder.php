@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Course;
 use App\Models\Semester;
+use Illuminate\Support\Str;
 
 class SemesterSeeder extends Seeder
 {
@@ -24,7 +25,7 @@ class SemesterSeeder extends Seeder
             } elseif (str_contains($title, 'b.tech')) {
                 $totalSemesters = 8;
             } elseif (str_contains($title, 'mca')) {
-                $totalSemesters = 4;
+                $totalSemesters = 6;
             } elseif (str_contains($title, 'msc')) {
                 $totalSemesters = 4;
             } elseif (str_contains($title, 'bca')) {
@@ -45,6 +46,7 @@ class SemesterSeeder extends Seeder
                     [
                         'title' => 'Semester ' . $i,
                         'description' => $course->title . ' - Semester ' . $i,
+                        'static_qr_token' => Str::random(40),
                         'is_active' => true,
                     ]
                 );

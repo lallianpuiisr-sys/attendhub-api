@@ -9,7 +9,12 @@ class Course extends Model
     protected $fillable = [
         'title',
         'description',
+        'static_qr_token',
         'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     // A course has many semesters

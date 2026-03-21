@@ -11,7 +11,12 @@ class Semester extends Model
         'title',
         'description',
         'semester_number',
+        'static_qr_token',
         'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     // belongs to course

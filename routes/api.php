@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\CloudinaryController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AttendanceSessionController;
 use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\PeriodController;
 use App\Http\Controllers\SessionController;
@@ -20,6 +22,9 @@ Route::middleware('web')->group(function () {
         Route::post('me/avatar', [CloudinaryController::class, 'uploadAvatar']);
 
         Route::apiResource('courses', CourseController::class);
+        Route::apiResource('attendance-sessions', AttendanceSessionController::class);
+        Route::apiResource('attendances', AttendanceController::class);
+        Route::post('attendance/scan-static', [AttendanceController::class, 'scanStatic']);
         Route::apiResource('enrollments', EnrollmentController::class);
         Route::apiResource('periods', PeriodController::class);
         Route::apiResource('semesters', SemesterController::class);
@@ -30,4 +35,3 @@ Route::middleware('web')->group(function () {
 
 Route::post('forgot-password', [SessionController::class, 'forgotPassword']);
 Route::post('reset-password', [SessionController::class, 'resetPassword']);
-
