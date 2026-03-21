@@ -119,6 +119,22 @@ class SessionController extends Controller
         }
     }
 
+    // GET /api/me
+    public function me(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return $this->errorResponse('Unauthenticated', null, 401);
+            }
+
+            return $this->successResponse('Authenticated user fetched successfully', $user->load(['course', 'semester']));
+        } catch (Throwable $e) {
+            return $this->errorResponse('Failed to fetch authenticated user', ['error' => $e->getMessage()], 500);
+        }
+    }
+
     // POST /api/forgot-password
     public function forgotPassword(Request $request)
     {

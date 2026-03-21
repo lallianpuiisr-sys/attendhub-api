@@ -23,6 +23,7 @@ return new class extends Migration {
             $table->string('phone')->nullable()->unique();
             $table->string('roll_no')->nullable()->unique();
             $table->string('role')->nullable();
+            $table->string('avatar_url')->nullable();
 
             $table->foreignId('course_id')
                 ->nullable()

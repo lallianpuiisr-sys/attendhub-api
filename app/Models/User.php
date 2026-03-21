@@ -19,6 +19,7 @@ class User extends Authenticatable implements CanResetPasswordContract
         'role',
         'student_id',
         'phone',
+        'avatar_url',
         'roll_no',
         'course_id',
         'semester_id',
