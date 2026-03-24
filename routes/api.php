@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CloudinaryController;
+use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AttendanceSessionController;
@@ -21,6 +22,7 @@ Route::middleware('web')->group(function () {
         Route::get('me', [SessionController::class, 'me']);
         Route::post('me/avatar', [CloudinaryController::class, 'uploadAvatar']);
 
+        Route::apiResource('complaints', ComplaintController::class);
         Route::apiResource('courses', CourseController::class);
         Route::apiResource('attendance-sessions', AttendanceSessionController::class);
         Route::apiResource('attendances', AttendanceController::class);
