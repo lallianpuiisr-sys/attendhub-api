@@ -26,8 +26,10 @@ Route::middleware('web')->group(function () {
         Route::apiResource('attendances', AttendanceController::class);
         Route::post('attendance/scan-static', [AttendanceController::class, 'scanStatic']);
         Route::apiResource('enrollments', EnrollmentController::class);
+        Route::get('periods/by-context', [PeriodController::class, 'byContext']);
         Route::apiResource('periods', PeriodController::class);
         Route::apiResource('semesters', SemesterController::class);
+        Route::get('semesters/{id}/qr', [SemesterController::class, 'qr']);
         Route::apiResource('subjects', SubjectController::class);
         Route::apiResource('users', UserController::class);
     });

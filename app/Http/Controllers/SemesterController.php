@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Semester;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -26,6 +27,22 @@ class SemesterController extends Controller
             'message' => $message,
             'errors' => $errors,
         ], $status);
+    }
+
+    private function generateStaticQrToken(): string
+    {
+        return (string) Str::uuid();
+    }
+
+    private function buildSemesterQrPayload(Semester $semester): array
+    {
+        return [
+            'semester_id' => $semester->id,
+            'title' => $semester->title,
+            'token' => $semester->static_qr_token,
+            'qr_image_url' => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='
+                . rawurlencode($semester->static_qr_token),
+        ];
     }
 
     // GET /api/semesters
@@ -52,6 +69,8 @@ class SemesterController extends Controller
                 'is_active' => 'boolean',
             ]);
 
+            $validated['static_qr_token'] = $this->generateStaticQrToken();
+
             $semester = Semester::create($validated);
 
             return $this->successResponse('Semester created successfully', $semester, 201);
@@ -73,6 +92,28 @@ class SemesterController extends Controller
             return $this->errorResponse('Semester not found', null, 404);
         } catch (Throwable $e) {
             return $this->errorResponse('Failed to fetch semester', ['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // GET /api/semesters/{id}/qr
+    public function qr($id)
+    {
+        try {
+            $semester = Semester::findOrFail($id);
+
+            if (!$semester->static_qr_token) {
+                $semester->static_qr_token = $this->generateStaticQrToken();
+                $semester->save();
+            }
+
+            return $this->successResponse(
+                'Semester QR generated successfully',
+                $this->buildSemesterQrPayload($semester)
+            );
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Semester not found', null, 404);
+        } catch (Throwable $e) {
+            return $this->errorResponse('Failed to generate semester QR', ['error' => $e->getMessage()], 500);
         }
     }
 

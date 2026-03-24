@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Enrollment;
 use App\Models\Period;
+use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -35,6 +37,64 @@ class PeriodController extends Controller
             $periods = Period::with(['course', 'semester'])->latest()->get();
 
             return $this->successResponse('Periods fetched successfully', $periods);
+        } catch (Throwable $e) {
+            return $this->errorResponse('Failed to fetch periods', ['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // GET /api/periods/by-context?user_id=1&course_id=1&semester_id=1
+    public function byContext(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'course_id' => 'nullable|exists:courses,id',
+                'semester_id' => 'nullable|exists:semesters,id',
+            ]);
+
+            $user = User::findOrFail($validated['user_id']);
+            $courseId = $validated['course_id'] ?? $user->course_id;
+            $semesterId = $validated['semester_id'] ?? $user->semester_id;
+
+            if (!$courseId || !$semesterId) {
+                return $this->errorResponse(
+                    'Course and semester are required for this user',
+                    ['course_id' => ['Course or semester is missing for the selected user.']],
+                    422
+                );
+            }
+
+            $isEnrolled = Enrollment::where('user_id', $user->id)
+                ->where('course_id', $courseId)
+                ->where('semester_id', $semesterId)
+                ->where('is_active', true)
+                ->exists();
+
+            if (!$isEnrolled && ((int) $user->course_id !== (int) $courseId || (int) $user->semester_id !== (int) $semesterId)) {
+                return $this->errorResponse(
+                    'User is not assigned to the requested course and semester',
+                    null,
+                    403
+                );
+            }
+
+            $periods = Period::with(['course', 'semester'])
+                ->where('course_id', $courseId)
+                ->where('semester_id', $semesterId)
+                ->where('is_active', true)
+                ->orderBy('start_time')
+                ->get();
+
+            return $this->successResponse('Periods fetched successfully', [
+                'user_id' => $user->id,
+                'course_id' => $courseId,
+                'semester_id' => $semesterId,
+                'periods' => $periods,
+            ]);
+        } catch (ValidationException $e) {
+            return $this->errorResponse('Validation failed', $e->errors(), 422);
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('User not found', null, 404);
         } catch (Throwable $e) {
             return $this->errorResponse('Failed to fetch periods', ['error' => $e->getMessage()], 500);
         }
