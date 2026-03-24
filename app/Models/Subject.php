@@ -12,6 +12,7 @@ class Subject extends Model
         'description',
         'course_id',
         'semester_id',
+        'day_of_week',
         'period_id',
         'is_active',
     ];

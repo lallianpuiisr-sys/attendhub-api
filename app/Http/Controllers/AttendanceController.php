@@ -188,10 +188,17 @@ class AttendanceController extends Controller
                 return $this->errorResponse('No active period at this time', null, 400);
             }
 
+            $dayOfWeek = strtolower($now->englishDayOfWeek);
+
             $subject = Subject::where('course_id', $courseId)
                 ->where('semester_id', $semesterId)
                 ->where('period_id', $period->id)
+                ->where(function ($query) use ($dayOfWeek) {
+                    $query->where('day_of_week', $dayOfWeek)
+                        ->orWhereNull('day_of_week');
+                })
                 ->where('is_active', true)
+                ->orderByRaw("CASE WHEN day_of_week = ? THEN 0 ELSE 1 END", [$dayOfWeek])
                 ->first();
 
             if (!$subject) {

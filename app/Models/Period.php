@@ -30,4 +30,14 @@ class Period extends Model
     {
         return $this->belongsTo(Semester::class);
     }
+
+    public function subject()
+    {
+        return $this->hasOne(Subject::class);
+    }
+
+    public function subjects()
+    {
+        return $this->hasMany(Subject::class);
+    }
 }

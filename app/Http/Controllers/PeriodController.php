@@ -12,6 +12,16 @@ use Throwable;
 
 class PeriodController extends Controller
 {
+    private const DAY_ORDER = [
+        'monday' => 1,
+        'tuesday' => 2,
+        'wednesday' => 3,
+        'thursday' => 4,
+        'friday' => 5,
+        'saturday' => 6,
+        'sunday' => 7,
+    ];
+
     private function successResponse(string $message, $data = null, int $status = 200)
     {
         return response()->json([
@@ -28,6 +38,21 @@ class PeriodController extends Controller
             'message' => $message,
             'errors' => $errors,
         ], $status);
+    }
+
+    private function formatPeriodsWithSubjects($periods)
+    {
+        return $periods->map(function ($period) {
+            $subjects = $period->subjects->sortBy(function ($subject) {
+                return self::DAY_ORDER[$subject->day_of_week] ?? 99;
+            })->values();
+
+            $periodData = $period->toArray();
+            $periodData['subject'] = $subjects->first();
+            $periodData['subjects'] = $subjects;
+
+            return $periodData;
+        })->values();
     }
 
     // GET /api/periods
@@ -78,7 +103,17 @@ class PeriodController extends Controller
                 );
             }
 
-            $periods = Period::with(['course', 'semester'])
+            $periods = Period::with([
+                'course',
+                'semester',
+                'subjects' => function ($query) use ($courseId, $semesterId) {
+                    $query->where('course_id', $courseId)
+                        ->where('semester_id', $semesterId)
+                        ->where('is_active', true)
+                        ->orderBy('day_of_week')
+                        ->orderBy('id');
+                },
+            ])
                 ->where('course_id', $courseId)
                 ->where('semester_id', $semesterId)
                 ->where('is_active', true)
@@ -89,7 +124,7 @@ class PeriodController extends Controller
                 'user_id' => $user->id,
                 'course_id' => $courseId,
                 'semester_id' => $semesterId,
-                'periods' => $periods,
+                'periods' => $this->formatPeriodsWithSubjects($periods),
             ]);
         } catch (ValidationException $e) {
             return $this->errorResponse('Validation failed', $e->errors(), 422);

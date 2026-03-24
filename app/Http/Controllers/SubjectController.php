@@ -50,6 +50,7 @@ class SubjectController extends Controller
                 'description' => 'nullable|string',
                 'course_id' => 'nullable|exists:courses,id',
                 'semester_id' => 'nullable|exists:semesters,id',
+                'day_of_week' => 'nullable|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
                 'period_id' => 'nullable|exists:periods,id',
                 'is_active' => 'boolean',
             ]);
@@ -90,6 +91,7 @@ class SubjectController extends Controller
                 'description' => 'nullable|string',
                 'course_id' => 'nullable|exists:courses,id',
                 'semester_id' => 'nullable|exists:semesters,id',
+                'day_of_week' => 'nullable|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
                 'period_id' => 'nullable|exists:periods,id',
                 'is_active' => 'boolean',
             ]);
