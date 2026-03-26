@@ -32,7 +32,7 @@ class ComplaintController extends Controller
     public function index()
     {
         try {
-            $complaints = Complaint::with(['subject', 'period'])->latest()->get();
+            $complaints = Complaint::with(['user', 'subject', 'period'])->latest()->get();
 
             return $this->successResponse('Complaints fetched successfully', $complaints);
         } catch (Throwable $e) {
@@ -44,6 +44,12 @@ class ComplaintController extends Controller
     public function store(Request $request)
     {
         try {
+            $user = $request->user();
+
+            if (!$user) {
+                return $this->errorResponse('Unauthenticated', null, 401);
+            }
+
             $validated = $request->validate([
                 'complaint_type' => 'required|string|max:255',
                 'date_of_class' => 'required|date',
@@ -52,6 +58,9 @@ class ComplaintController extends Controller
                 'reason' => 'required|string',
                 'file_url' => 'nullable|string|max:2048',
             ]);
+
+            $validated['user_id'] = $user->id;
+            $validated['status'] = 'pending';
 
             $complaint = Complaint::create($validated);
 
@@ -67,7 +76,7 @@ class ComplaintController extends Controller
     public function show($id)
     {
         try {
-            $complaint = Complaint::with(['subject', 'period'])->findOrFail($id);
+            $complaint = Complaint::with(['user', 'subject', 'period'])->findOrFail($id);
 
             return $this->successResponse('Complaint fetched successfully', $complaint);
         } catch (ModelNotFoundException $e) {
@@ -90,6 +99,7 @@ class ComplaintController extends Controller
                 'period_id' => 'sometimes|required|exists:periods,id',
                 'reason' => 'sometimes|required|string',
                 'file_url' => 'nullable|string|max:2048',
+                'status' => 'sometimes|required|in:pending,approve,reject',
             ]);
 
             $complaint->update($validated);
