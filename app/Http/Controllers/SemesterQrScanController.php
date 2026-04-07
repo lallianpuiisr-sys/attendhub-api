@@ -34,7 +34,7 @@ class SemesterQrScanController extends Controller
         ], $status);
     }
 
-    private function resolveCurrentPeriod(int $courseId, int $semesterId, Carbon $now, int $graceMinutes): ?Period
+    private function resolveCurrentPeriod(int $courseId, int $semesterId, Carbon $now): ?Period
     {
         /** @var \Illuminate\Database\Eloquent\Collection<int, Period> $periods */
         $periods = Period::where('course_id', $courseId)
@@ -49,10 +49,9 @@ class SemesterQrScanController extends Controller
             }
 
             $startAt = Carbon::today()->setTimeFromTimeString((string) $candidate->start_time);
-            $endAt = Carbon::today()->setTimeFromTimeString((string) $candidate->end_time);
-
-            $windowStart = $startAt->copy()->subMinutes($graceMinutes);
-            $windowEnd = $endAt->copy()->addMinutes($graceMinutes);
+            $scanWindowMinutes = max(1, (int) ($candidate->scan_window_minutes ?? 5));
+            $windowStart = $startAt->copy();
+            $windowEnd = $startAt->copy()->addMinutes($scanWindowMinutes);
 
             if ($now->betweenIncluded($windowStart, $windowEnd)) {
                 return $candidate;
@@ -80,7 +79,7 @@ class SemesterQrScanController extends Controller
             $semester = Semester::where('static_qr_token', $validated['token'])->first();
 
             if (!$semester) {
-                return $this->errorResponse('Invalid QR token', null, 404);
+                return $this->errorResponse('I QR scan hi a awm lo', null, 404);
             }
 
             $courseId = $semester->course_id;
@@ -97,11 +96,10 @@ class SemesterQrScanController extends Controller
             }
 
             $now = Carbon::now();
-            $graceMinutes = 10;
-            $period = $this->resolveCurrentPeriod($courseId, $semesterId, $now, $graceMinutes);
+            $period = $this->resolveCurrentPeriod($courseId, $semesterId, $now);
 
             if (!$period) {
-                return $this->errorResponse('No period at current time', null, 400);
+                return $this->errorResponse('Attendance scan window is closed for current periods', null, 400);
             }
 
             $dayOfWeek = strtolower($now->englishDayOfWeek);

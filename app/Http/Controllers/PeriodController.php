@@ -143,10 +143,13 @@ class PeriodController extends Controller
                 'name' => 'required|string|max:255',
                 'start_time' => 'required|date_format:H:i',
                 'end_time' => 'required|date_format:H:i',
+                'scan_window_minutes' => 'sometimes|integer|min:1|max:60',
                 'course_id' => 'nullable|exists:courses,id',
                 'semester_id' => 'nullable|exists:semesters,id',
                 'is_active' => 'boolean',
             ]);
+
+            $validated['scan_window_minutes'] = $validated['scan_window_minutes'] ?? 5;
 
             $period = Period::create($validated);
 
@@ -182,6 +185,7 @@ class PeriodController extends Controller
                 'name' => 'sometimes|required|string|max:255',
                 'start_time' => 'sometimes|required|date_format:H:i',
                 'end_time' => 'sometimes|required|date_format:H:i',
+                'scan_window_minutes' => 'sometimes|integer|min:1|max:60',
                 'course_id' => 'nullable|exists:courses,id',
                 'semester_id' => 'nullable|exists:semesters,id',
                 'is_active' => 'boolean',

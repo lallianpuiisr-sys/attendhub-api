@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Enrollment;
+use App\Models\Semester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
@@ -91,7 +94,35 @@ class SessionController extends Controller
             $remember = (bool) ($validated['remember'] ?? false);
             unset($validated['remember']);
 
-            $user = User::create($validated);
+            $user = DB::transaction(function () use ($validated) {
+                $courseId = $validated['course_id'] ?? null;
+                $semesterId = $validated['semester_id'] ?? null;
+
+                if (!$courseId && $semesterId) {
+                    $courseId = Semester::query()
+                        ->whereKey($semesterId)
+                        ->value('course_id');
+                }
+
+                if ($courseId && $semesterId) {
+                    $validated['course_id'] = $courseId;
+                    $validated['semester_id'] = $semesterId;
+                }
+
+                $user = User::create($validated);
+
+                if ($courseId && $semesterId) {
+                    Enrollment::updateOrCreate([
+                        'user_id' => $user->id,
+                        'course_id' => $courseId,
+                        'semester_id' => $semesterId,
+                    ], [
+                        'is_active' => $validated['is_active'] ?? true,
+                    ]);
+                }
+
+                return $user->load(['course', 'semester', 'enrollments']);
+            });
 
             Auth::login($user, $remember);
             $request->session()->regenerate();

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Enrollment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -52,8 +54,8 @@ class UserController extends Controller
                 'role' => 'required|string',
                 'avatar_url' => 'nullable|string',
                 'student_id' => 'nullable|string|max:100|unique:users,student_id',
-                'course_id' => 'nullable|exists:courses,id',
-                'semester_id' => 'nullable|exists:semesters,id',
+                'course_id' => 'nullable|exists:courses,id|required_with:semester_id',
+                'semester_id' => 'nullable|exists:semesters,id|required_with:course_id',
                 'is_active' => 'boolean',
             ]);
 
@@ -65,7 +67,20 @@ class UserController extends Controller
 
             $validated['password'] = Hash::make($validated['password']);
 
-            $user = User::create($validated);
+            $user = DB::transaction(function () use ($validated) {
+                $user = User::create($validated);
+
+                if (!empty($validated['course_id']) && !empty($validated['semester_id'])) {
+                    Enrollment::create([
+                        'user_id' => $user->id,
+                        'course_id' => $validated['course_id'],
+                        'semester_id' => $validated['semester_id'],
+                        'is_active' => $validated['is_active'] ?? true,
+                    ]);
+                }
+
+                return $user->load(['course', 'semester', 'enrollments']);
+            });
 
             return $this->successResponse('User created successfully', $user, 201);
         } catch (ValidationException $e) {

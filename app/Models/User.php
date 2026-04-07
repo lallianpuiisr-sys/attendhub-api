@@ -47,4 +47,9 @@ class User extends Authenticatable implements CanResetPasswordContract
     {
         return $this->belongsTo(Semester::class);
     }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
 }

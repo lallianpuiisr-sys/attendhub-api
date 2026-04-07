@@ -26,6 +26,7 @@ Route::middleware('web')->group(function () {
         Route::apiResource('complaints', ComplaintController::class);
         Route::apiResource('courses', CourseController::class);
         Route::apiResource('attendance-sessions', AttendanceSessionController::class);
+        Route::get('attendances/user-summary', [AttendanceController::class, 'userSummary']);
         Route::apiResource('attendances', AttendanceController::class);
         Route::post('attendance/scan-static', [SemesterQrScanController::class, 'scan']);
         Route::apiResource('enrollments', EnrollmentController::class);

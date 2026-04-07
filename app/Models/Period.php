@@ -10,6 +10,7 @@ class Period extends Model
         'name',
         'start_time',
         'end_time',
+        'scan_window_minutes',
         'course_id',
         'semester_id',
         'is_active',
@@ -18,6 +19,7 @@ class Period extends Model
     protected $casts = [
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
+        'scan_window_minutes' => 'integer',
         'is_active' => 'boolean',
     ];
 
