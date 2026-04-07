@@ -20,6 +20,8 @@ class BcaViWeeklyTimetableSeeder extends Seeder
             ['name' => 'Period 1', 'start_time' => '09:30', 'end_time' => '10:30'],
             ['name' => 'Period 2', 'start_time' => '10:30', 'end_time' => '11:30'],
             ['name' => 'Period 3', 'start_time' => '11:30', 'end_time' => '12:30'],
+            ['name' => 'Period 4', 'start_time' => '13:00', 'end_time' => '14:00'],
+            ['name' => 'Period 5', 'start_time' => '14:00', 'end_time' => '15:00'],
         ];
 
         $periods = [];
