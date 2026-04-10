@@ -12,10 +12,16 @@ class Semester extends Model
         'description',
         'semester_number',
         'static_qr_token',
+        'geofence_latitude',
+        'geofence_longitude',
+        'geofence_radius_meters',
         'is_active',
     ];
 
     protected $casts = [
+        'geofence_latitude' => 'float',
+        'geofence_longitude' => 'float',
+        'geofence_radius_meters' => 'integer',
         'is_active' => 'boolean',
     ];
 

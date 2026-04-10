@@ -16,6 +16,8 @@ use Throwable;
 
 class SemesterQrScanController extends Controller
 {
+    private const EARTH_RADIUS_METERS = 6371000;
+
     private function successResponse(string $message, $data = null, int $status = 200)
     {
         return response()->json([
@@ -61,6 +63,32 @@ class SemesterQrScanController extends Controller
         return null;
     }
 
+    private function hasConfiguredGeofence(Semester $semester): bool
+    {
+        return $semester->geofence_latitude !== null
+            && $semester->geofence_longitude !== null
+            && $semester->geofence_radius_meters !== null;
+    }
+
+    private function distanceInMeters(
+        float $fromLatitude,
+        float $fromLongitude,
+        float $toLatitude,
+        float $toLongitude
+    ): float {
+        $deltaLatitude = deg2rad($toLatitude - $fromLatitude);
+        $deltaLongitude = deg2rad($toLongitude - $fromLongitude);
+
+        $fromLatitudeRadians = deg2rad($fromLatitude);
+        $toLatitudeRadians = deg2rad($toLatitude);
+
+        $a = sin($deltaLatitude / 2) ** 2
+            + cos($fromLatitudeRadians) * cos($toLatitudeRadians) * sin($deltaLongitude / 2) ** 2;
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return self::EARTH_RADIUS_METERS * $c;
+    }
+
     // POST /api/qr/scan-semester
     public function scan(Request $request)
     {
@@ -68,6 +96,8 @@ class SemesterQrScanController extends Controller
             $validated = $request->validate([
                 'token' => 'required|string',
                 'device_id' => 'nullable|string|max:255',
+                'latitude' => 'nullable|numeric|between:-90,90',
+                'longitude' => 'nullable|numeric|between:-180,180',
             ]);
 
             $user = $request->user();
@@ -80,6 +110,32 @@ class SemesterQrScanController extends Controller
 
             if (!$semester) {
                 return $this->errorResponse('I QR scan hi a awm lo', null, 404);
+            }
+
+            if (!$this->hasConfiguredGeofence($semester)) {
+                return $this->errorResponse('Semester geolocation is not configured', null, 422);
+            }
+
+            if (!isset($validated['latitude']) || !isset($validated['longitude'])) {
+                return $this->errorResponse('Location is required to scan this QR', null, 422);
+            }
+
+            $distanceMeters = $this->distanceInMeters(
+                (float) $validated['latitude'],
+                (float) $validated['longitude'],
+                (float) $semester->geofence_latitude,
+                (float) $semester->geofence_longitude
+            );
+
+            if ($distanceMeters > (float) $semester->geofence_radius_meters) {
+                return $this->errorResponse(
+                    'You are outside the allowed attendance scan area',
+                    [
+                        'distance_meters' => round($distanceMeters, 2),
+                        'allowed_radius_meters' => (int) $semester->geofence_radius_meters,
+                    ],
+                    403
+                );
             }
 
             $courseId = $semester->course_id;

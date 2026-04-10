@@ -7,6 +7,13 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/login', function () {
+    return response()->json([
+        'success' => false,
+        'message' => 'Unauthenticated',
+    ], 401);
+})->name('login');
+
 // Password reset link target (required by Password::sendResetLink)
 Route::get('/reset-password/{token}', function (Request $request, string $token) {
     return response()->json([

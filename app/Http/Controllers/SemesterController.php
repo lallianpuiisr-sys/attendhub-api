@@ -40,6 +40,9 @@ class SemesterController extends Controller
             'semester_id' => $semester->id,
             'title' => $semester->title,
             'token' => $semester->static_qr_token,
+            'geofence_latitude' => $semester->geofence_latitude,
+            'geofence_longitude' => $semester->geofence_longitude,
+            'geofence_radius_meters' => $semester->geofence_radius_meters,
             'qr_image_url' => 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='
                 . rawurlencode($semester->static_qr_token),
         ];
@@ -66,6 +69,9 @@ class SemesterController extends Controller
                 'title' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'semester_number' => 'required|integer|min:1',
+                'geofence_latitude' => 'required|numeric|between:-90,90',
+                'geofence_longitude' => 'required|numeric|between:-180,180',
+                'geofence_radius_meters' => 'required|integer|min:5|max:5000',
                 'is_active' => 'boolean',
             ]);
 
@@ -128,6 +134,9 @@ class SemesterController extends Controller
                 'title' => 'sometimes|required|string|max:255',
                 'description' => 'nullable|string',
                 'semester_number' => 'sometimes|required|integer|min:1',
+                'geofence_latitude' => 'sometimes|required|numeric|between:-90,90|required_with:geofence_longitude',
+                'geofence_longitude' => 'sometimes|required|numeric|between:-180,180|required_with:geofence_latitude',
+                'geofence_radius_meters' => 'sometimes|required|integer|min:5|max:5000',
                 'is_active' => 'boolean',
             ]);
 
