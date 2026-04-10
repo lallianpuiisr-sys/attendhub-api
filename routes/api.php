@@ -10,6 +10,7 @@ use App\Http\Controllers\PeriodController;
 use App\Http\Controllers\SemesterQrScanController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SemesterController;
+use App\Http\Controllers\StaffDetailController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +37,7 @@ Route::middleware('web')->group(function () {
         Route::apiResource('semesters', SemesterController::class);
         Route::get('semesters/{id}/qr', [SemesterController::class, 'qr']);
         Route::apiResource('subjects', SubjectController::class);
+        Route::apiResource('staff-details', StaffDetailController::class);
         Route::apiResource('users', UserController::class);
     });
 });

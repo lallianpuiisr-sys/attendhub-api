@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Enrollment;
+use App\Models\StaffDetail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -13,6 +14,8 @@ use Throwable;
 
 class UserController extends Controller
 {
+    private const STAFF_ROLES = ['teacher', 'admin', 'receptionist'];
+
     private function successResponse(string $message, $data = null, int $status = 200)
     {
         return response()->json([
@@ -29,6 +32,24 @@ class UserController extends Controller
             'message' => $message,
             'errors' => $errors,
         ], $status);
+    }
+
+    private function forcePendingStaffApproval(User $user): void
+    {
+        $role = strtolower((string) ($user->role ?? ''));
+
+        if (!in_array($role, self::STAFF_ROLES, true)) {
+            return;
+        }
+
+        StaffDetail::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'is_approved' => false,
+                'approved_at' => null,
+                'approved_by' => null,
+            ]
+        );
     }
 
     // GET /api/users
@@ -69,6 +90,7 @@ class UserController extends Controller
 
             $user = DB::transaction(function () use ($validated) {
                 $user = User::create($validated);
+                $this->forcePendingStaffApproval($user);
 
                 if (!empty($validated['course_id']) && !empty($validated['semester_id'])) {
                     Enrollment::create([
@@ -128,6 +150,7 @@ class UserController extends Controller
 
             $user = DB::transaction(function () use ($user, $validated) {
                 $user->update($validated);
+                $this->forcePendingStaffApproval($user);
 
                 if (!empty($validated['course_id']) && !empty($validated['semester_id'])) {
                     Enrollment::updateOrCreate(

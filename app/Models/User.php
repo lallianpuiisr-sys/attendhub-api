@@ -52,4 +52,14 @@ class User extends Authenticatable implements CanResetPasswordContract
     {
         return $this->hasMany(Enrollment::class);
     }
+
+    public function staffDetail()
+    {
+        return $this->hasOne(StaffDetail::class);
+    }
+
+    public function approvedStaffDetails()
+    {
+        return $this->hasMany(StaffDetail::class, 'approved_by');
+    }
 }
