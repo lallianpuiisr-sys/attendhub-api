@@ -14,6 +14,7 @@ class Subject extends Model
         'semester_id',
         'day_of_week',
         'period_id',
+        'worker_id',
         'is_active',
     ];
 
@@ -34,5 +35,10 @@ class Subject extends Model
     public function period()
     {
         return $this->belongsTo(Period::class);
+    }
+
+    public function worker()
+    {
+        return $this->belongsTo(Worker::class, 'worker_id');
     }
 }

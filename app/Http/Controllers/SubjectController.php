@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Subject;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class SubjectController extends Controller
 {
+    private const WORKER_ROLES = ['teacher', 'admin', 'receptionist'];
+
     private function successResponse(string $message, $data = null, int $status = 200)
     {
         return response()->json([
@@ -32,7 +35,7 @@ class SubjectController extends Controller
     public function index()
     {
         try {
-            $subjects = Subject::with(['course', 'semester', 'period'])->latest()->get();
+            $subjects = Subject::with(['course', 'semester', 'period', 'worker'])->latest()->get();
 
             return $this->successResponse('Subjects fetched successfully', $subjects);
         } catch (Throwable $e) {
@@ -52,6 +55,10 @@ class SubjectController extends Controller
                 'semester_id' => 'nullable|exists:semesters,id',
                 'day_of_week' => 'nullable|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
                 'period_id' => 'nullable|exists:periods,id',
+                'worker_id' => [
+                    'nullable',
+                    Rule::exists('users', 'id')->whereIn('role', self::WORKER_ROLES),
+                ],
                 'is_active' => 'boolean',
             ]);
 
@@ -69,7 +76,7 @@ class SubjectController extends Controller
     public function show($id)
     {
         try {
-            $subject = Subject::with(['course', 'semester', 'period'])->findOrFail($id);
+            $subject = Subject::with(['course', 'semester', 'period', 'worker'])->findOrFail($id);
 
             return $this->successResponse('Subject fetched successfully', $subject);
         } catch (ModelNotFoundException $e) {
@@ -93,6 +100,10 @@ class SubjectController extends Controller
                 'semester_id' => 'nullable|exists:semesters,id',
                 'day_of_week' => 'nullable|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
                 'period_id' => 'nullable|exists:periods,id',
+                'worker_id' => [
+                    'nullable',
+                    Rule::exists('users', 'id')->whereIn('role', self::WORKER_ROLES),
+                ],
                 'is_active' => 'boolean',
             ]);
 
