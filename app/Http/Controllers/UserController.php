@@ -16,6 +16,15 @@ class UserController extends Controller
 {
     private const STAFF_ROLES = ['teacher', 'admin', 'receptionist'];
 
+    private function getStaffRoleFlags(string $role): array
+    {
+        return [
+            'is_admin' => $role === 'admin',
+            'is_teacher' => $role === 'teacher',
+            'is_receptionist' => $role === 'receptionist',
+        ];
+    }
+
     private function successResponse(string $message, $data = null, int $status = 200)
     {
         return response()->json([
@@ -45,6 +54,7 @@ class UserController extends Controller
         StaffDetail::updateOrCreate(
             ['user_id' => $user->id],
             [
+                ...$this->getStaffRoleFlags($role),
                 'is_approved' => false,
                 'approved_at' => null,
                 'approved_by' => null,
