@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('periods', function (Blueprint $table) {
-            $table->unsignedTinyInteger('scan_window_minutes')->default(5)->after('end_time');
+            $table->unsignedTinyInteger('scan_window_minutes')->nullable()->default(5)->after('end_time');
         });
     }
 
