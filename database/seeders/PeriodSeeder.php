@@ -26,10 +26,7 @@ class PeriodSeeder extends Seeder
             36 => [
                 ['name' => 'Period 1', 'start_time' => '09:30', 'end_time' => '10:30', 'scan_window_minutes' => 5],
                 ['name' => 'Period 2', 'start_time' => '10:30', 'end_time' => '11:30', 'scan_window_minutes' => 5],
-                ['name' => 'Period 3', 'start_time' => '11:30', 'end_time' => '22:30', 'scan_window_minutes' => null],
-                ['name' => 'Period 4', 'start_time' => '13:00', 'end_time' => '14:00', 'scan_window_minutes' => 5],
-                ['name' => 'Period 5', 'start_time' => '14:00', 'end_time' => '15:00', 'scan_window_minutes' => 5],
-                ['name' => 'Period 6', 'start_time' => '14:30', 'end_time' => '15:15', 'scan_window_minutes' => 5],
+                ['name' => 'Period 3', 'start_time' => '11:30', 'end_time' => '12:30', 'scan_window_minutes' => 5],
             ],
         ];
 
@@ -40,6 +37,13 @@ class PeriodSeeder extends Seeder
 
         foreach ($semesters as $semester) {
             $periods = $customPeriodsBySemester[$semester->id] ?? $defaultPeriods;
+            $periodNames = collect($periods)->pluck('name')->all();
+
+            Period::query()
+                ->where('course_id', $semester->course_id)
+                ->where('semester_id', $semester->id)
+                ->whereNotIn('name', $periodNames)
+                ->delete();
 
             foreach ($periods as $period) {
                 Period::updateOrCreate(
