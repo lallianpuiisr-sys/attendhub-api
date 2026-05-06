@@ -28,4 +28,11 @@ class Course extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function institutions()
+    {
+        return $this->belongsToMany(Institution::class)
+            ->withPivot('is_active')
+            ->withTimestamps();
+    }
 }

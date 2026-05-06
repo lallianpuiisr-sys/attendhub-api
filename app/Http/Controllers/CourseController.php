@@ -29,10 +29,29 @@ class CourseController extends Controller
     }
 
     // GET /api/courses
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $courses = Course::latest()->get();
+            $query = Course::query()->latest();
+
+            if ($request->filled('search')) {
+                $search = trim((string) $request->input('search'));
+
+                $query->where(function ($query) use ($search) {
+                    $query
+                        ->where('title', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            }
+
+            if ($request->hasAny(['page', 'per_page', 'search'])) {
+                $perPage = min(max((int) $request->integer('per_page', 10), 1), 100);
+                $courses = $query->paginate($perPage);
+
+                return $this->successResponse('Courses fetched successfully', $courses);
+            }
+
+            $courses = $query->get();
 
             return $this->successResponse('Courses fetched successfully', $courses);
         } catch (Throwable $e) {

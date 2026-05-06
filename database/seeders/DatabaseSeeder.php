@@ -19,8 +19,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             CourseSeeder::class,
+            InstitutionSeeder::class,
             SemesterSeeder::class,
-            PeriodSeeder::class,
             WorkerPositionSeeder::class,
             BcaViWeeklyTimetableSeeder::class,
         ]);
