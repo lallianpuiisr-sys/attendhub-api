@@ -21,8 +21,8 @@ class DatabaseSeeder extends Seeder
             CourseSeeder::class,
             InstitutionSeeder::class,
             SemesterSeeder::class,
-            PeriodSeeder::class,
             WorkerPositionSeeder::class,
+            BcaViWeeklyTimetableSeeder::class,
         ]);
     }
 }
