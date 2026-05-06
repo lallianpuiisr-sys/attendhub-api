@@ -51,9 +51,10 @@ class SemesterQrScanController extends Controller
             }
 
             $startAt = Carbon::today()->setTimeFromTimeString((string) $candidate->start_time);
-            $scanWindowMinutes = max(1, (int) ($candidate->scan_window_minutes ?? 5));
             $windowStart = $startAt->copy();
-            $windowEnd = $startAt->copy()->addMinutes($scanWindowMinutes);
+            $windowEnd = $candidate->scan_window_minutes === null
+                ? Carbon::today()->setTimeFromTimeString((string) $candidate->end_time)
+                : $startAt->copy()->addMinutes(max(1, (int) $candidate->scan_window_minutes));
 
             if ($now->betweenIncluded($windowStart, $windowEnd)) {
                 return $candidate;
