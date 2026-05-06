@@ -14,19 +14,19 @@ class PeriodSeeder extends Seeder
     public function run(): void
     {
         $defaultPeriods = [
-            ['name' => 'Period 1', 'start_time' => '09:30', 'end_time' => '10:30', 'scan_window_minutes' => 5],
-            ['name' => 'Period 2', 'start_time' => '10:30', 'end_time' => '11:30', 'scan_window_minutes' => 5],
-            ['name' => 'Period 3', 'start_time' => '11:30', 'end_time' => '12:30', 'scan_window_minutes' => 5],
-            ['name' => 'Period 4', 'start_time' => '13:00', 'end_time' => '13:45', 'scan_window_minutes' => 5],
-            ['name' => 'Period 5', 'start_time' => '13:45', 'end_time' => '14:30', 'scan_window_minutes' => 5],
-            ['name' => 'Period 6', 'start_time' => '14:30', 'end_time' => '15:15', 'scan_window_minutes' => 5],
+            ['name' => 'Period 1', 'start_time' => '09:30', 'end_time' => '10:30'],
+            ['name' => 'Period 2', 'start_time' => '10:30', 'end_time' => '11:30'],
+            ['name' => 'Period 3', 'start_time' => '11:30', 'end_time' => '12:30'],
+            ['name' => 'Period 4', 'start_time' => '13:00', 'end_time' => '13:45'],
+            ['name' => 'Period 5', 'start_time' => '13:45', 'end_time' => '14:30'],
+            ['name' => 'Period 6', 'start_time' => '14:30', 'end_time' => '15:15'],
         ];
 
         $customPeriodsBySemester = [
             36 => [
-                ['name' => 'Period 1', 'start_time' => '09:30', 'end_time' => '10:30', 'scan_window_minutes' => 5],
-                ['name' => 'Period 2', 'start_time' => '10:30', 'end_time' => '11:30', 'scan_window_minutes' => 5],
-                ['name' => 'Period 3', 'start_time' => '11:30', 'end_time' => '12:30', 'scan_window_minutes' => 5],
+                ['name' => 'Period 1', 'start_time' => '09:30', 'end_time' => '10:30'],
+                ['name' => 'Period 2', 'start_time' => '10:30', 'end_time' => '11:30'],
+                ['name' => 'Period 3', 'start_time' => '11:30', 'end_time' => '12:30'],
             ],
         ];
 
