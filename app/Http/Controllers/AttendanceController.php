@@ -298,10 +298,11 @@ class AttendanceController extends Controller
             $period = null;
 
             foreach ($periods as $candidate) {
-                $startAt = Carbon::today()->setTimeFromTimeString($candidate->getRawOriginal('start_time'));
-                $scanWindowMinutes = max(1, (int) ($candidate->scan_window_minutes ?? 5));
+                $startAt = $now->copy()->startOfDay()->setTimeFromTimeString($candidate->getRawOriginal('start_time'));
                 $windowStart = $startAt->copy();
-                $windowEnd = $startAt->copy()->addMinutes($scanWindowMinutes);
+                $windowEnd = $candidate->scan_window_minutes === null
+                    ? $now->copy()->startOfDay()->setTimeFromTimeString($candidate->getRawOriginal('end_time'))
+                    : $startAt->copy()->addMinutes(max(1, (int) $candidate->scan_window_minutes));
 
                 if ($now->betweenIncluded($windowStart, $windowEnd)) {
                     $period = $candidate;
@@ -330,8 +331,8 @@ class AttendanceController extends Controller
                 return $this->errorResponse('No subject scheduled for this period', null, 400);
             }
 
-            $startAt = Carbon::today()->setTimeFromTimeString($period->getRawOriginal('start_time'));
-            $endAt = Carbon::today()->setTimeFromTimeString($period->getRawOriginal('end_time'));
+            $startAt = $now->copy()->startOfDay()->setTimeFromTimeString($period->getRawOriginal('start_time'));
+            $endAt = $now->copy()->startOfDay()->setTimeFromTimeString($period->getRawOriginal('end_time'));
 
             $session = AttendanceSession::firstOrCreate(
                 [
