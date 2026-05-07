@@ -201,7 +201,12 @@ class SemesterQrScanController extends Controller
                 ->first();
 
             if ($existingAttendance) {
-                return $this->successResponse('Attendance already marked', $existingAttendance);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Already scanned for this period. You are already marked present.',
+                    'data' => $existingAttendance,
+                    'already_scanned' => true,
+                ], 200);
             }
 
             $attendance = Attendance::create([
