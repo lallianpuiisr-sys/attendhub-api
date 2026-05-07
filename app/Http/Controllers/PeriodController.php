@@ -149,8 +149,6 @@ class PeriodController extends Controller
                 'is_active' => 'boolean',
             ]);
 
-            $validated['scan_window_minutes'] = $validated['scan_window_minutes'] ?? 5;
-
             $period = Period::create($validated);
 
             return $this->successResponse('Period created successfully', $period, 201);

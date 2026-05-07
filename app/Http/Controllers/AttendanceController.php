@@ -299,9 +299,10 @@ class AttendanceController extends Controller
 
             foreach ($periods as $candidate) {
                 $startAt = Carbon::today()->setTimeFromTimeString($candidate->getRawOriginal('start_time'));
-                $scanWindowMinutes = max(1, (int) ($candidate->scan_window_minutes ?? 5));
                 $windowStart = $startAt->copy();
-                $windowEnd = $startAt->copy()->addMinutes($scanWindowMinutes);
+                $windowEnd = $candidate->scan_window_minutes === null
+                    ? Carbon::today()->setTimeFromTimeString($candidate->getRawOriginal('end_time'))
+                    : $startAt->copy()->addMinutes(max(1, (int) $candidate->scan_window_minutes));
 
                 if ($now->betweenIncluded($windowStart, $windowEnd)) {
                     $period = $candidate;
