@@ -55,7 +55,6 @@ class PeriodSeeder extends Seeder
                     [
                         'start_time' => $period['start_time'],
                         'end_time' => $period['end_time'],
-                        'scan_window_minutes' => $period['scan_window_minutes'],
                         'is_active' => true,
                     ]
                 );
