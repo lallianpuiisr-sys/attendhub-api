@@ -19,6 +19,16 @@ class SemesterQrScanController extends Controller
 {
     private const EARTH_RADIUS_METERS = 6371000;
 
+    private function nowMs(): float
+    {
+        return microtime(true) * 1000;
+    }
+
+    private function elapsedMs(float $startedAtMs): float
+    {
+        return round($this->nowMs() - $startedAtMs, 2);
+    }
+
     private function successResponse(string $message, $data = null, int $status = 200)
     {
         return response()->json([
@@ -76,14 +86,6 @@ class SemesterQrScanController extends Controller
             }
         }
 
-        Log::warning('No active period matched current scan time', [
-            'course_id' => $courseId,
-            'semester_id' => $semesterId,
-            'app_timezone' => config('app.timezone'),
-            'php_timezone' => date_default_timezone_get(),
-            'now_iso' => $now->toIso8601String(),
-            'periods_checked' => $diagnostics,
-        ]);
 
         return null;
     }
@@ -117,21 +119,30 @@ class SemesterQrScanController extends Controller
     // POST /api/qr/scan-semester
     public function scan(Request $request)
     {
+        $requestStartedAtMs = $this->nowMs();
+        $timings = [];
+
         try {
+            $stepStartedAtMs = $this->nowMs();
             $validated = $request->validate([
                 'token' => 'required|string',
                 'device_id' => 'nullable|string|max:255',
                 'latitude' => 'nullable|numeric|between:-90,90',
                 'longitude' => 'nullable|numeric|between:-180,180',
             ]);
+            $timings['validate_request_ms'] = $this->elapsedMs($stepStartedAtMs);
 
+            $stepStartedAtMs = $this->nowMs();
             $user = $request->user();
+            $timings['resolve_user_ms'] = $this->elapsedMs($stepStartedAtMs);
 
             if (!$user) {
                 return $this->errorResponse('Unauthenticated', null, 401);
             }
 
+            $stepStartedAtMs = $this->nowMs();
             $semester = Semester::where('static_qr_token', $validated['token'])->first();
+            $timings['lookup_semester_ms'] = $this->elapsedMs($stepStartedAtMs);
 
             if (!$semester) {
                 return $this->errorResponse('I QR scan hi a awm lo', null, 404);
@@ -145,12 +156,14 @@ class SemesterQrScanController extends Controller
                 return $this->errorResponse('Location is required to scan this QR', null, 422);
             }
 
+            $stepStartedAtMs = $this->nowMs();
             $distanceMeters = $this->distanceInMeters(
                 (float) $validated['latitude'],
                 (float) $validated['longitude'],
                 (float) $semester->geofence_latitude,
                 (float) $semester->geofence_longitude
             );
+            $timings['geofence_distance_ms'] = $this->elapsedMs($stepStartedAtMs);
 
             if ($distanceMeters > (float) $semester->geofence_radius_meters) {
                 return $this->errorResponse(
@@ -166,18 +179,23 @@ class SemesterQrScanController extends Controller
             $courseId = $semester->course_id;
             $semesterId = $semester->id;
 
+            $stepStartedAtMs = $this->nowMs();
             $enrollment = Enrollment::where('user_id', $user->id)
                 ->where('course_id', $courseId)
                 ->where('semester_id', $semesterId)
                 ->where('is_active', true)
                 ->first();
+            $timings['lookup_enrollment_ms'] = $this->elapsedMs($stepStartedAtMs);
 
             if (!$enrollment) {
                 return $this->errorResponse('Student not enrolled for this course/semester', null, 403);
             }
 
             $now = Carbon::now(config('app.timezone'));
+
+            $stepStartedAtMs = $this->nowMs();
             $period = $this->resolveCurrentPeriod($courseId, $semesterId, $now);
+            $timings['resolve_period_ms'] = $this->elapsedMs($stepStartedAtMs);
 
             if (!$period) {
                 return $this->errorResponse('Attendance scan window is closed for current periods', null, 400);
@@ -185,6 +203,7 @@ class SemesterQrScanController extends Controller
 
             $dayOfWeek = strtolower($now->englishDayOfWeek);
 
+            $stepStartedAtMs = $this->nowMs();
             $subject = Subject::where('course_id', $courseId)
                 ->where('semester_id', $semesterId)
                 ->where('period_id', $period->id)
@@ -195,6 +214,7 @@ class SemesterQrScanController extends Controller
                 ->where('is_active', true)
                 ->orderByRaw("CASE WHEN day_of_week = ? THEN 0 ELSE 1 END", [$dayOfWeek])
                 ->first();
+            $timings['lookup_subject_ms'] = $this->elapsedMs($stepStartedAtMs);
 
             if (!$subject) {
                 return $this->errorResponse('No subject scheduled for this period', null, 400);
@@ -203,6 +223,7 @@ class SemesterQrScanController extends Controller
             $startAt = $now->copy()->startOfDay()->setTimeFromTimeString($period->getRawOriginal('start_time'));
             $endAt = $now->copy()->startOfDay()->setTimeFromTimeString($period->getRawOriginal('end_time'));
 
+            $stepStartedAtMs = $this->nowMs();
             $session = AttendanceSession::firstOrCreate(
                 [
                     'course_id' => $courseId,
@@ -219,12 +240,27 @@ class SemesterQrScanController extends Controller
                     'is_active' => true,
                 ]
             );
+            $timings['first_or_create_session_ms'] = $this->elapsedMs($stepStartedAtMs);
 
+            $stepStartedAtMs = $this->nowMs();
             $existingAttendance = Attendance::where('user_id', $user->id)
                 ->where('attendance_session_id', $session->id)
                 ->first();
+            $timings['lookup_existing_attendance_ms'] = $this->elapsedMs($stepStartedAtMs);
 
             if ($existingAttendance) {
+                $timings['total_ms'] = $this->elapsedMs($requestStartedAtMs);
+                Log::info('Semester QR scan completed', [
+                    'user_id' => $user->id,
+                    'semester_id' => $semesterId,
+                    'course_id' => $courseId,
+                    'period_id' => $period->id,
+                    'subject_id' => $subject->id,
+                    'result' => 'already_scanned',
+                    'distance_meters' => round($distanceMeters, 2),
+                    'timings_ms' => $timings,
+                ]);
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Already scanned for this period. You are already marked present.',
@@ -233,6 +269,7 @@ class SemesterQrScanController extends Controller
                 ], 200);
             }
 
+            $stepStartedAtMs = $this->nowMs();
             $attendance = Attendance::create([
                 'user_id' => $user->id,
                 'attendance_session_id' => $session->id,
@@ -240,6 +277,19 @@ class SemesterQrScanController extends Controller
                 'scanned_at' => $now,
                 'device_id' => $validated['device_id'] ?? null,
                 'ip_address' => $request->ip(),
+            ]);
+            $timings['create_attendance_ms'] = $this->elapsedMs($stepStartedAtMs);
+            $timings['total_ms'] = $this->elapsedMs($requestStartedAtMs);
+
+            Log::info('Semester QR scan completed', [
+                'user_id' => $user->id,
+                'semester_id' => $semesterId,
+                'course_id' => $courseId,
+                'period_id' => $period->id,
+                'subject_id' => $subject->id,
+                'result' => 'marked_present',
+                'distance_meters' => round($distanceMeters, 2),
+                'timings_ms' => $timings,
             ]);
 
             return $this->successResponse('Attendance marked successfully', $attendance, 201);
