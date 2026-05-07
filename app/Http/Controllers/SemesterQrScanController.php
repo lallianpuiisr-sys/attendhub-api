@@ -50,10 +50,10 @@ class SemesterQrScanController extends Controller
                 continue;
             }
 
-            $startAt = Carbon::today()->setTimeFromTimeString((string) $candidate->start_time);
+            $startAt = $now->copy()->startOfDay()->setTimeFromTimeString($candidate->getRawOriginal('start_time'));
             $windowStart = $startAt->copy();
             $windowEnd = $candidate->scan_window_minutes === null
-                ? Carbon::today()->setTimeFromTimeString((string) $candidate->end_time)
+                ? $now->copy()->startOfDay()->setTimeFromTimeString($candidate->getRawOriginal('end_time'))
                 : $startAt->copy()->addMinutes(max(1, (int) $candidate->scan_window_minutes));
 
             if ($now->betweenIncluded($windowStart, $windowEnd)) {
@@ -176,8 +176,8 @@ class SemesterQrScanController extends Controller
                 return $this->errorResponse('No subject scheduled for this period', null, 400);
             }
 
-            $startAt = Carbon::today()->setTimeFromTimeString((string) $period->start_time);
-            $endAt = Carbon::today()->setTimeFromTimeString((string) $period->end_time);
+            $startAt = $now->copy()->startOfDay()->setTimeFromTimeString($period->getRawOriginal('start_time'));
+            $endAt = $now->copy()->startOfDay()->setTimeFromTimeString($period->getRawOriginal('end_time'));
 
             $session = AttendanceSession::firstOrCreate(
                 [
