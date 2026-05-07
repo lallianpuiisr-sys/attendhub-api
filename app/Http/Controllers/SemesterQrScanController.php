@@ -10,6 +10,7 @@ use App\Models\Semester;
 use App\Models\Subject;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -45,6 +46,8 @@ class SemesterQrScanController extends Controller
             ->orderBy('start_time')
             ->get();
 
+        $diagnostics = [];
+
         foreach ($periods as $candidate) {
             if (!$candidate instanceof Period) {
                 continue;
@@ -56,10 +59,31 @@ class SemesterQrScanController extends Controller
                 ? $now->copy()->startOfDay()->setTimeFromTimeString($candidate->getRawOriginal('end_time'))
                 : $startAt->copy()->addMinutes(max(1, (int) $candidate->scan_window_minutes));
 
+            $diagnostics[] = [
+                'period_id' => $candidate->id,
+                'period_name' => $candidate->name,
+                'start_time' => $candidate->getRawOriginal('start_time'),
+                'end_time' => $candidate->getRawOriginal('end_time'),
+                'scan_window_minutes' => $candidate->scan_window_minutes,
+                'window_start' => $windowStart->toDateTimeString(),
+                'window_end' => $windowEnd->toDateTimeString(),
+                'now' => $now->toDateTimeString(),
+                'matched' => $now->betweenIncluded($windowStart, $windowEnd),
+            ];
+
             if ($now->betweenIncluded($windowStart, $windowEnd)) {
                 return $candidate;
             }
         }
+
+        Log::warning('No active period matched current scan time', [
+            'course_id' => $courseId,
+            'semester_id' => $semesterId,
+            'app_timezone' => config('app.timezone'),
+            'php_timezone' => date_default_timezone_get(),
+            'now_iso' => $now->toIso8601String(),
+            'periods_checked' => $diagnostics,
+        ]);
 
         return null;
     }
@@ -152,7 +176,7 @@ class SemesterQrScanController extends Controller
                 return $this->errorResponse('Student not enrolled for this course/semester', null, 403);
             }
 
-            $now = Carbon::now();
+            $now = Carbon::now(config('app.timezone'));
             $period = $this->resolveCurrentPeriod($courseId, $semesterId, $now);
 
             if (!$period) {
