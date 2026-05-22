@@ -47,8 +47,8 @@ class SemesterSeeder extends Seeder
                         'title' => 'Semester ' . $i,
                         'description' => $course->title . ' - Semester ' . $i,
                         'static_qr_token' => Str::random(40),
-                        'geofence_latitude' => 23.727107,
-                        'geofence_longitude' => 92.717636,
+                        'geofence_latitude' => 23.754017,
+                        'geofence_longitude' => 92.741369,
                         'geofence_radius_meters' => 150,
                         'is_active' => true,
                     ]
