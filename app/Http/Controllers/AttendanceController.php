@@ -288,7 +288,7 @@ class AttendanceController extends Controller
                 return $this->errorResponse('Student not enrolled for this course/semester', null, 403);
             }
 
-            $now = Carbon::now();
+            $now = Carbon::now(config('app.timezone'));
 
             $periods = Period::where('course_id', $courseId)
                 ->where('semester_id', $semesterId)
